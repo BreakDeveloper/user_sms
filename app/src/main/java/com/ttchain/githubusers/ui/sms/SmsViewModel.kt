@@ -52,9 +52,7 @@ class SmsViewModel(private val context: Context, private val smsRepository: SmsR
     var receiptText = ""
     var bankAccountNumber = ""
 
-    fun receipt(
-        message: String
-    ) {
+    fun receipt(message: String) {
         val hash = "$loginId$bankAccountNumber$message$secretKey".getSHA512()
         add(
             smsRepository.receipt(loginId, bankAccountNumber, message, hash)

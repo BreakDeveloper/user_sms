@@ -13,12 +13,14 @@ class SMSContentObserver(val context: Context?, handler: Handler?) : ContentObse
 
     private var messageListener: MessageListener? = null
 
-    override fun onChange(selfChange: Boolean, uri: Uri) {
+    override fun onChange(selfChange: Boolean, uri: Uri?) {
         var smsInfoList = emptyList<SmsInfo>()
-        try {
-            smsInfoList = getSmsInfo(context, uri)
-        } catch (e: Exception) {
-            Timber.w("smsError : ${e.message}")
+        uri?.let {
+            try {
+                smsInfoList = getSmsInfo(context, uri)
+            } catch (e: Exception) {
+                Timber.w("smsError : ${e.message}")
+            }
         }
         if (smsInfoList.isNotEmpty()) {
 //            val verifyCode = smsInfoList[0].smsBody?.replace("[^\\d.]".toRegex(), "")

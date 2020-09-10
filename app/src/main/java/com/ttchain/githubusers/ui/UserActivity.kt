@@ -32,7 +32,7 @@ class UserActivity : BaseActivity() {
 
     private val viewModel by viewModel<UserViewModel>()
     private val userName: String
-        get() = intent.getStringExtra(USER_NAME)
+        get() = intent.getStringExtra(USER_NAME).orEmpty()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

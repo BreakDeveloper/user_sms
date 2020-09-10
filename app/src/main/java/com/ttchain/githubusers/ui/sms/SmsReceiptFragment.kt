@@ -1,9 +1,9 @@
 package com.ttchain.githubusers.ui.sms
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.os.Handler
-import androidx.lifecycle.observe
 import com.tbruyelle.rxpermissions2.RxPermissions
 import com.ttchain.githubusers.*
 import com.ttchain.githubusers.base.BaseFragment
@@ -36,6 +36,7 @@ class SmsReceiptFragment : BaseFragment(), SMSContentObserver.MessageListener {
         smsContentObserver = null
     }
 
+    @SuppressLint("SetTextI18n")
     override fun initView() {
         viewModel.receiptText = ""
         startButton.setOnClickListener {
@@ -63,7 +64,7 @@ class SmsReceiptFragment : BaseFragment(), SMSContentObserver.MessageListener {
                             viewModel.checkBankNumber()
 
                             val originalText = textResult.text
-                            textResult.text ="開始\n\n" + originalText
+                            textResult.text = "開始\n\n$originalText"
                         }
                     } else {
                         startSettingsActivity()
@@ -71,13 +72,13 @@ class SmsReceiptFragment : BaseFragment(), SMSContentObserver.MessageListener {
                 }
         }
         cancelButton.setOnClickListener {
-            editTextBankAccountNo.text.clear()
+//            editTextBankAccountNo.text.clear()
             editTextBankAccountNo.isEnabled = true
             startButton.isEnabled = true
             cancelButton.isEnabled = false
 
             val originalText = textResult.text
-            textResult.text ="取消\n\n" + originalText
+            textResult.text = "取消\n\n$originalText"
         }
     }
 
@@ -100,6 +101,7 @@ class SmsReceiptFragment : BaseFragment(), SMSContentObserver.MessageListener {
         }
     }
 
+    @SuppressLint("SetTextI18n")
     override fun onReceived(message: String?) {
         val originalText = textResult.text
         textResult.text = message + "\n\n" + originalText
