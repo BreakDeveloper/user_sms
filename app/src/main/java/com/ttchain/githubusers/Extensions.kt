@@ -16,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.commit
+import com.ttchain.githubusers.App.Companion.instance
 import com.ttchain.githubusers.dialog.ToastDialog
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -24,6 +25,16 @@ import java.math.BigDecimal
 import java.math.BigInteger
 import java.security.MessageDigest
 import java.util.*
+
+fun getDbUrl(): String {
+    return instance.getString(
+        R.string.db_url,
+        App.preferenceHelper.dbServer,
+        App.preferenceHelper.dbName,
+        App.preferenceHelper.dbUser,
+        App.preferenceHelper.dbPassword
+    )
+}
 
 @SuppressLint("HardwareIds")
 fun getUniqueDeviceId(context: Context): String {

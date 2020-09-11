@@ -6,6 +6,7 @@ import com.ttchain.githubusers.addFragment
 import com.ttchain.githubusers.base.BaseActivity
 import com.ttchain.githubusers.changeFragment
 import com.ttchain.githubusers.tools.Gzip
+import com.ttchain.githubusers.ui.smsdb.SmsDbFragment
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import timber.log.Timber
 
@@ -29,7 +30,8 @@ class SmsActivity : BaseActivity() {
         Timber.d("enText: $enText")
         val deText = Gzip.decompress(enText)
         Timber.d("deText: $deText")
-        changeFragment(R.id.container, SmsLoginFragment.newInstance())
+//        changeFragment(R.id.container, SmsLoginFragment.newInstance())
+        changeFragment(R.id.container, SmsDbFragment())
     }
 
     private fun initData() {

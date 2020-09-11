@@ -37,4 +37,10 @@ object TimeUtils {
         val cal = Calendar.getInstance()
         return cal.time.time
     }
+
+    @JvmStatic
+    fun getNowTimeStr(): String {
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        return dateFormat.format(Date())
+    }
 }

@@ -12,6 +12,12 @@ class AppPreferenceHelper(private val preference: SharedPreferences) {
         private const val keyAccount = "account"
         private const val keyPassword = "password"
         private const val keyAndroidId = "androidId"
+
+        private const val keyDbServer = "dbServer"
+        private const val keyDbName = "dbName"
+        private const val keyDbUser = "dbUser"
+        private const val keyDbPassword = "dbPassword"
+        private const val keyDbTable = "dbTable"
     }
 
     private var gson: Gson = GsonBuilder().create()
@@ -66,6 +72,26 @@ class AppPreferenceHelper(private val preference: SharedPreferences) {
     var userPassword: String
         set(value) = preference.edit { putString(keyPassword, Gzip.compress(value)) }
         get() = Gzip.decompress(preference.getString(keyPassword, "") ?: "")
+
+    var dbServer: String
+        set(value) = preference.edit { putString(keyDbServer, Gzip.compress(value)) }
+        get() = Gzip.decompress(preference.getString(keyDbServer, "") ?: "")
+
+    var dbName: String
+        set(value) = preference.edit { putString(keyDbName, Gzip.compress(value)) }
+        get() = Gzip.decompress(preference.getString(keyDbName, "") ?: "")
+
+    var dbTable: String
+        set(value) = preference.edit { putString(keyDbTable, Gzip.compress(value)) }
+        get() = Gzip.decompress(preference.getString(keyDbTable, "") ?: "")
+
+    var dbUser: String
+        set(value) = preference.edit { putString(keyDbUser, Gzip.compress(value)) }
+        get() = Gzip.decompress(preference.getString(keyDbUser, "") ?: "")
+
+    var dbPassword: String
+        set(value) = preference.edit { putString(keyDbPassword, Gzip.compress(value)) }
+        get() = Gzip.decompress(preference.getString(keyDbPassword, "") ?: "")
 
 //    /**
 //     * 取得Android Id
