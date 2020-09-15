@@ -1,7 +1,6 @@
 package com.ttchain.githubusers.ui.sms
 
 import android.os.Bundle
-import androidx.lifecycle.observe
 import com.ttchain.githubusers.R
 import com.ttchain.githubusers.addFragment
 import com.ttchain.githubusers.base.BaseActivity

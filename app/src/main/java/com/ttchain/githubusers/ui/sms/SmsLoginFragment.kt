@@ -1,12 +1,13 @@
 package com.ttchain.githubusers.ui.sms
 
 import android.os.Bundle
-import androidx.lifecycle.observe
-import com.ttchain.githubusers.*
+import com.ttchain.githubusers.App
+import com.ttchain.githubusers.R
 import com.ttchain.githubusers.base.BaseFragment
+import com.ttchain.githubusers.hideKeyboard
+import com.ttchain.githubusers.showSendToast
 import kotlinx.android.synthetic.main.sms_login.*
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
-import timber.log.Timber
 
 class SmsLoginFragment : BaseFragment() {
 

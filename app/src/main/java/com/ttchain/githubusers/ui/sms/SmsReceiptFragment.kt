@@ -118,7 +118,7 @@ class SmsReceiptFragment : BaseFragment(), SMSContentObserver.MessageListener {
             getString(R.string.start_sms_catcher)
         )
         if (smsContentObserver == null) {
-            smsContentObserver = SMSContentObserver(requireContext(), Handler())
+            smsContentObserver = SMSContentObserver(requireContext(), view?.handler)
             smsContentObserver?.register(this)
         }
     }
