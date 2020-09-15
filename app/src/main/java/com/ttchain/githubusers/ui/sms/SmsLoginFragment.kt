@@ -1,6 +1,8 @@
 package com.ttchain.githubusers.ui.sms
 
+import android.annotation.SuppressLint
 import android.os.Bundle
+import android.view.View
 import com.ttchain.githubusers.App
 import com.ttchain.githubusers.R
 import com.ttchain.githubusers.base.BaseFragment
@@ -27,10 +29,19 @@ class SmsLoginFragment : BaseFragment() {
         initData()
     }
 
+    @SuppressLint("SetTextI18n")
     override fun initView() {
         editTextApiAddress.setText(App.preferenceHelper.userHost)
         editTextAccount.setText(App.preferenceHelper.userAccount)
         editTextPassword.setText(App.preferenceHelper.userPassword)
+
+        testButton.visibility = View.VISIBLE
+        testButton.setOnClickListener {
+            editTextApiAddress.setText("https://api.fandc.site")
+            editTextAccount.setText("jsttestaa01")
+            editTextPassword.setText("jsttestaa01")
+        }
+
         loginButton.setOnClickListener {
             requireActivity().hideKeyboard()
             val apiAddress = editTextApiAddress.text.toString()

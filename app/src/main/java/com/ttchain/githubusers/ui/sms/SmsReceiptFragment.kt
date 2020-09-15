@@ -3,7 +3,9 @@ package com.ttchain.githubusers.ui.sms
 import android.Manifest
 import android.annotation.SuppressLint
 import android.os.Bundle
-import android.os.Handler
+import android.view.View
+import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.list.listItems
 import com.tbruyelle.rxpermissions2.RxPermissions
 import com.ttchain.githubusers.*
 import com.ttchain.githubusers.base.BaseFragment
@@ -18,8 +20,7 @@ class SmsReceiptFragment : BaseFragment(), SMSContentObserver.MessageListener {
         fun newInstance() = SmsReceiptFragment()
     }
 
-    override val layoutId: Int
-        get() = R.layout.sms_receipt
+    override val layoutId = R.layout.sms_receipt
 
     private val viewModel by sharedViewModel<SmsViewModel>()
     private var smsContentObserver: SMSContentObserver? = null
@@ -38,6 +39,27 @@ class SmsReceiptFragment : BaseFragment(), SMSContentObserver.MessageListener {
 
     @SuppressLint("SetTextI18n")
     override fun initView() {
+        testButton.visibility = View.VISIBLE
+        testButton.setOnClickListener {
+            editTextBankAccountNo.setText("6228480708716183973")
+        }
+
+        val items = listOf(
+            "中國銀行 123456789 陳大大",
+            "上海銀行 123456789 陳二大",
+            "北京銀行 123456789 陳三大",
+            "北京銀行 123456789 陳三大",
+            "北京銀行 123456789 陳三大"
+        )
+
+        getBankButton.setOnClickListener {
+            context?.let {
+                MaterialDialog(it).show {
+                    listItems(items = items)
+                }
+            }
+        }
+
         viewModel.receiptText = ""
         startButton.setOnClickListener {
             requireActivity().hideKeyboard()
@@ -50,7 +72,7 @@ class SmsReceiptFragment : BaseFragment(), SMSContentObserver.MessageListener {
                     if (granted) {
                         val bankAccountNumber = editTextBankAccountNo.text.toString()
                         viewModel.bankAccountNumber = bankAccountNumber
-                        if (bankAccountNumber.isBlank()|| !isBankAccountNo(bankAccountNumber)) {
+                        if (bankAccountNumber.isBlank() || !isBankAccountNo(bankAccountNumber)) {
                             childFragmentManager.showSendToast(
                                 false,
                                 getString(R.string.error),

@@ -35,7 +35,8 @@ class SmsActivity : BaseActivity() {
     private fun initData() {
         viewModel.loginResult.observe(this) {
             onHideLoading()
-            addFragment(R.id.container, SmsReceiptFragment.newInstance())
+//            addFragment(R.id.container, SmsReceiptFragment.newInstance())
+            addFragment(R.id.container, SmsContainerFragment())
         }
     }
 }
