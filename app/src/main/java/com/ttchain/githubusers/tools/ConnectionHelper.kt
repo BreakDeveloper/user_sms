@@ -24,7 +24,7 @@ class ConnectionHelper {
                     Class.forName(it).newInstance()
                     connection = DriverManager.getConnection(getDbUrl())
                     val query =
-                        "INSERT INTO ${App.preferenceHelper.dbTable} (Content, Status, CreateDate) values ('$smsContent','0','${TimeUtils.getNowTimeStr()}')"
+                        "INSERT INTO ${App.preferenceHelper.dbTable} (Content, Status, CreateDate) values (N'${smsContent}','0','${TimeUtils.getNowTimeStr()}')"
                     val pat = connection!!.prepareStatement(query)
                     pat.executeUpdate()
                     pat.close()
@@ -56,9 +56,13 @@ class ConnectionHelper {
                     val query = "SELECT * FROM ${App.preferenceHelper.dbTable} ORDER BY ID ASC"
                     val pat = connection!!.prepareStatement(query)
                     val rs = pat.executeQuery()
+                    var isPrintFirst = true
                     while (rs.next()) {
                         val orderId = rs.getString(2)
-                        Timber.i("content= $orderId")
+                        if (isPrintFirst) {
+                            Timber.i("content= $orderId")
+                            isPrintFirst = false
+                        }
                     }
                     rs.close()
                     pat.close()

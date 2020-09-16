@@ -4,6 +4,7 @@ import android.content.SharedPreferences
 import androidx.core.content.edit
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.ttchain.githubusers.enum.ServiceState
 
 class AppPreferenceHelper(private val preference: SharedPreferences) {
 
@@ -18,7 +19,16 @@ class AppPreferenceHelper(private val preference: SharedPreferences) {
         private const val keyDbUser = "dbUser"
         private const val keyDbPassword = "dbPassword"
         private const val keyDbTable = "dbTable"
+
+        private const val keyServiceState = "serviceState"
     }
+
+    var serviceState: ServiceState
+        set(value) = preference.edit { putString(keyServiceState, value.name) }
+        get() = ServiceState.valueOf(
+            preference.getString(keyServiceState, ServiceState.STOPPED.name)
+                ?: ServiceState.STOPPED.name
+        )
 
     private var gson: Gson = GsonBuilder().create()
 
@@ -92,6 +102,7 @@ class AppPreferenceHelper(private val preference: SharedPreferences) {
     var dbPassword: String
         set(value) = preference.edit { putString(keyDbPassword, Gzip.compress(value)) }
         get() = Gzip.decompress(preference.getString(keyDbPassword, "") ?: "")
+
 
 //    /**
 //     * 取得Android Id

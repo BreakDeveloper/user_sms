@@ -1,16 +1,25 @@
 package com.ttchain.githubusers.ui.smsdb
 
+import android.Manifest
+import android.content.Intent
 import android.os.Bundle
+import androidx.core.content.ContextCompat.startForegroundService
+import com.tbruyelle.rxpermissions2.RxPermissions
 import com.ttchain.githubusers.App
 import com.ttchain.githubusers.R
 import com.ttchain.githubusers.base.BaseFragment
+import com.ttchain.githubusers.enum.Actions
+import com.ttchain.githubusers.enum.ServiceState
+import com.ttchain.githubusers.serivce.SmsService
 import com.ttchain.githubusers.showSendToast
+import com.ttchain.githubusers.toMain
 import com.ttchain.githubusers.tools.ConnectionHelper
+import io.reactivex.disposables.Disposable
 import kotlinx.android.synthetic.main.sms_db.*
 import timber.log.Timber
-import kotlin.random.Random
 
 class SmsDbFragment : BaseFragment() {
+    private var disposable: Disposable? = null
     override val layoutId = R.layout.sms_db
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -24,8 +33,10 @@ class SmsDbFragment : BaseFragment() {
         editTextDbTable.setText(App.preferenceHelper.dbTable)
         editTextDbUser.setText(App.preferenceHelper.dbUser)
         editTextDbPwd.setText(App.preferenceHelper.dbPassword)
+        dbSwitch.isChecked = App.preferenceHelper.serviceState == ServiceState.STARTED
+        enableEditText(!dbSwitch.isChecked)
 
-        dbSwitch.setOnCheckedChangeListener { compoundButton, isChecked ->
+        dbSwitch.setOnCheckedChangeListener { _, isChecked ->
             val dbServer = editTextDbServer.text.toString()
             val dbName = editTextDbName.text.toString()
             val dbTable = editTextDbTable.text.toString()
@@ -41,6 +52,7 @@ class SmsDbFragment : BaseFragment() {
                         getString(R.string.error),
                         getString(R.string.empty_error)
                     )
+                    dbSwitch.isChecked = false
                 } else {
                     enableEditText(false)
                     onShowLoading()
@@ -49,13 +61,24 @@ class SmsDbFragment : BaseFragment() {
                     App.preferenceHelper.dbTable = dbTable
                     App.preferenceHelper.dbUser = dbUser
                     App.preferenceHelper.dbPassword = dbPassword
+                    askPermission()
+                }
+            } else {
+                actionOnService(Actions.STOP)
+                enableEditText(true)
+            }
+        }
+    }
 
+    private fun askPermission() {
+        disposable = RxPermissions(requireActivity())
+            .request(Manifest.permission.READ_SMS)
+            .toMain()
+            .doFinally { onHideLoading() }
+            .subscribe({ granted ->
+                if (granted) {
                     ConnectionHelper.connectDbAndQuery(
-                        finalCallback = { onHideLoading() },
-                        callback = {
-                            Timber.i("StartService")
-                            ConnectionHelper.connectDbAndInsert("test_${Random.nextInt()}")
-                        },
+                        callback = { actionOnService(Actions.START) },
                         errorCallback = {
                             childFragmentManager.showSendToast(
                                 false,
@@ -63,13 +86,12 @@ class SmsDbFragment : BaseFragment() {
                                 it.message ?: "資料庫錯誤"
                             )
                             enableEditText(true)
-                            compoundButton.isChecked = false
+                            dbSwitch.isChecked = false
                         })
+                } else {
+                    dbSwitch.isChecked = false
                 }
-            } else {
-                enableEditText(true)
-            }
-        }
+            }, { Timber.e(" ${it.message}") })
     }
 
     private fun enableEditText(enable: Boolean) {
@@ -78,5 +100,22 @@ class SmsDbFragment : BaseFragment() {
         editTextDbTable.isEnabled = enable
         editTextDbUser.isEnabled = enable
         editTextDbPwd.isEnabled = enable
+    }
+
+    private fun actionOnService(actions: Actions) {
+        if (App.preferenceHelper.serviceState == ServiceState.STOPPED && actions == Actions.STOP) return
+
+        context?.let { context ->
+            Intent(context, SmsService::class.java).apply {
+                action = actions.name
+                startForegroundService(context, this)
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        disposable?.dispose()
+        disposable = null
     }
 }

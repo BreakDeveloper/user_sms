@@ -79,11 +79,14 @@ class SMSContentObserver(val context: Context?, handler: Handler?) : ContentObse
     }
 
     fun register(messageListener: MessageListener?) {
-        context?.contentResolver?.registerContentObserver(
-            Uri.parse("content://sms/"),
-            true,
-            this
-        )
+        context?.contentResolver?.let {
+            Timber.i("contentResolver not null")
+            it.registerContentObserver(
+                Uri.parse("content://sms/"),
+                true,
+                this
+            )
+        }
         this.messageListener = messageListener
     }
 
