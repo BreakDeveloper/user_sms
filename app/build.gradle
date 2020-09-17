@@ -112,4 +112,8 @@ dependencies {
 
     //Dialog
     implementation 'com.afollestad.material-dialogs:core:3.3.0'
+
+    implementation files('libs/signalr-client-sdk.jar')
+    implementation files('libs/signalr-client-sdk-android.aar')
+    implementation 'org.java-websocket:Java-WebSocket:1.5.1'
 }

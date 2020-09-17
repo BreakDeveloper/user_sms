@@ -159,3 +159,17 @@ data class ReceiptRequest(
     var message: String?,
     var hash: String?
 )
+
+data class ReceiptMessage(
+    var slaveAccountId: String? = null,
+    var token: String? = null,
+    var isActive: Boolean? = null,
+    var bankList: List<Bank>? = null
+)
+
+data class Bank(
+    var payeeBankId: Int? = null,
+    var bankName: String? = null,
+    var accountNo: String? = null,
+    var accountName: String? = null
+)
