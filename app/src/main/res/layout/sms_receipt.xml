@@ -8,14 +8,25 @@
     android:clickable="true"
     android:focusable="true"
     android:orientation="vertical"
-    android:padding="@dimen/padding_16">
+    android:paddingStart="@dimen/padding_16"
+    android:paddingEnd="@dimen/padding_16"
+    android:paddingBottom="@dimen/padding_16">
+
+    <Button
+        android:id="@+id/logoutButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/padding_12"
+        android:layout_marginEnd="@dimen/padding_8"
+        android:layout_toStartOf="@+id/getBankButton"
+        android:text="登出" />
 
     <Button
         android:id="@+id/getBankButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/padding_12"
-        android:layout_marginEnd="@dimen/padding_12"
+        android:layout_marginEnd="@dimen/padding_8"
         android:layout_toStartOf="@+id/bank_switch"
         android:text="查看銀行帳戶列表" />
 
@@ -26,32 +37,15 @@
         android:layout_alignTop="@+id/getBankButton"
         android:layout_alignBottom="@+id/getBankButton"
         android:layout_alignParentEnd="true"
-        android:layout_marginEnd="@dimen/padding_16"
+        android:layout_marginEnd="@dimen/padding_8"
         android:text="銀行卡開關" />
-
-    <TextView
-        android:id="@+id/bank_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/getBankButton"
-        android:layout_marginTop="@dimen/padding_8"
-        android:text="@string/bank_account_number" />
-
-    <EditText
-        android:id="@+id/editTextBankAccountNo"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/bank_title"
-        android:imeOptions="actionDone"
-        android:maxLines="1"
-        android:singleLine="true"
-        tools:text="6216602076993163544" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/button_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/editTextBankAccountNo">
+        android:layout_below="@+id/getBankButton"
+        android:layout_marginTop="@dimen/padding_12">
 
         <Button
             android:id="@+id/startButton"
@@ -86,7 +80,7 @@
             android:id="@+id/testButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="一鍵輸入"
+            android:text="測試簡訊"
             android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/cancelButton"

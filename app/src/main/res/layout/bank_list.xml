@@ -14,9 +14,30 @@
         android:layout_marginTop="@dimen/padding_12"
         android:layout_marginEnd="@dimen/padding_12"
         android:text="@string/get_bank_list"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/update_btn"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/update_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="刷新"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/getBankButton"
+        app:layout_constraintTop_toTopOf="@+id/getBankButton" />
+
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/bank_switch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/padding_16"
+        android:text="銀行卡開關"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/getBankButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/getBankButton"
+        app:layout_constraintTop_toTopOf="@+id/getBankButton" />
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipe_layout"
@@ -33,5 +54,16 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+    <TextView
+        android:id="@+id/empty_msg"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/no_order"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/getBankButton" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

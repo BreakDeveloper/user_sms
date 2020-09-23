@@ -8,102 +8,40 @@ import com.ttchain.githubusers.R
 import com.ttchain.githubusers.base.BaseFragment
 import com.ttchain.githubusers.data.ReceiptMessage
 import com.ttchain.githubusers.hideKeyboard
+import com.ttchain.githubusers.net.SignalR
 import com.ttchain.githubusers.showSendToast
 import kotlinx.android.synthetic.main.sms_login.*
-import microsoft.aspnet.signalr.client.LogLevel
-import microsoft.aspnet.signalr.client.Logger
-import microsoft.aspnet.signalr.client.Platform
-import microsoft.aspnet.signalr.client.http.android.AndroidPlatformComponent
-import microsoft.aspnet.signalr.client.hubs.HubConnection
-import microsoft.aspnet.signalr.client.hubs.HubProxy
-import microsoft.aspnet.signalr.client.transport.ClientTransport
-import microsoft.aspnet.signalr.client.transport.ServerSentEventsTransport
+import kotlinx.coroutines.*
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
+import retrofit2.HttpException
 import timber.log.Timber
-import java.util.concurrent.ExecutionException
 
-class SmsLoginFragment : BaseFragment() {
-
-    private var connection: HubConnection? = null
-    private var transport: ClientTransport? = null
-    private var proxy: HubProxy? = null
+class SmsLoginFragment : BaseFragment(), CoroutineScope by MainScope() {
 
     companion object {
         fun newInstance() = SmsLoginFragment()
         const val loginPath = "acceptor/receipt/login"
     }
 
-    override val layoutId: Int
-        get() = R.layout.sms_login
+    override val layoutId = R.layout.sms_login
 
     private val viewModel by sharedViewModel<SmsViewModel>()
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         initView()
-        initData()
     }
 
     @SuppressLint("SetTextI18n")
     override fun initView() {
-        Platform.loadPlatformComponent(AndroidPlatformComponent())
-
-//        if (connection == null) {
-        connection = HubConnection("http://18.177.24.213:63339/")
-//        }
-
-        val logger = Logger { message: String?, logLevel: LogLevel? ->
-            Timber.i("Logger LogLevel= ${logLevel}, Message= $message")
-        }
-
-        transport = ServerSentEventsTransport(logger)
-        proxy = connection?.createHubProxy("smsReceiptHub")
-
-        connection?.error { throwable ->
-            throwable.printStackTrace()
-            Timber.e("connection error ${throwable.message}")
-        }
-
-        // Subscribe to the connected event
-        connection?.connected { Timber.i("SignalR onConnected") }
-
-        // Subscribe to the closed event
-        connection?.closed { Timber.i("SignalR onClosed") }
-
-        // Subscribe to the received event
-        connection?.received { json ->
-            Timber.i("received $json")
-        }
-
-        // Subscribe to the received event
-        proxy?.on(
-            "notification", { message: ReceiptMessage? ->
-                Timber.i(" message= $message")
-            },
-            ReceiptMessage::class.java
-        )
-
-        val signalRFuture = connection?.start(transport)
-
-        Timber.i("signalRFuture get()")
-        try {
-            signalRFuture!!.get()
-        } catch (e: InterruptedException) {
-            Timber.e("InterruptedException= %s", e.toString())
-            return
-        } catch (e: ExecutionException) {
-            Timber.e("ExecutionException= $e")
-            return
-        }
-
         editTextApiAddress.setText(App.preferenceHelper.userHost)
         editTextAccount.setText(App.preferenceHelper.userAccount)
         editTextPassword.setText(App.preferenceHelper.userPassword)
 
-        testButton.visibility = View.VISIBLE
+        testButton.visibility = View.GONE
         testButton.setOnClickListener {
-            editTextApiAddress.setText("http://18.177.24.213:63339")
-            editTextAccount.setText("merchant12")
+            editTextApiAddress.setText("http://18.177.24.213:63339/")
+            editTextAccount.setText("Merchant11")
             editTextPassword.setText("aaaa1234")
         }
 
@@ -128,29 +66,84 @@ class SmsLoginFragment : BaseFragment() {
                 App.preferenceHelper.userHost = apiAddress
                 App.preferenceHelper.userAccount = loginId
                 App.preferenceHelper.userPassword = password
-//                viewModel.login(loginId, password)
 
+                if (!SignalR.isConnected) {
+                    SignalR.initConnection(App.preferenceHelper.userHost)
+                }
+
+                val list = arrayListOf<ReceiptMessage>()
+                var hasLogin = false
+                var hasBankList = false
+                var hasActive = false
+
+                SignalR.invoke(
+                    "login",
+                    App.preferenceHelper.userAccount,
+                    App.preferenceHelper.userPassword,
+                    callback = { msg, data ->
+                        if (msg == "error") {
+                            onHideLoading()
+                            launch(Dispatchers.Main) {
+                                childFragmentManager.showSendToast(
+                                    false,
+                                    getString(R.string.error),
+                                    data.message ?: "請重新登入"
+                                )
+                            }
+                            SignalR.invoke("logout")
+                            return@invoke
+                        } else if (msg != "systemMessage") {
+                            list.add(data)
+                        }
+
+                        data.token?.let {
+                            hasLogin = true
+                            App.preferenceHelper.token = it
+                        }
+                        data.payeeBanks?.let { hasBankList = true }
+                        data.isActive?.let { hasActive = true }
+
+                        if (hasLogin && hasBankList && hasActive) {
+                            val passList = mutableListOf<ReceiptMessage>()
+                            passList.addAll(list)
+                            viewModel.loginResult.postValue(passList)
+                            onHideLoading()
+                            list.clear()
+                            hasLogin = false
+                            hasBankList = false
+                            hasActive = false
+                        }
+                    },
+                    errorCallback = { throwable ->
+                        if (throwable is HttpException) {
+                            val errorMsg = throwable.response()?.errorBody()!!.string()
+                            Timber.i("errorMsg= $errorMsg")
+                        }
+
+                        launch(Dispatchers.Main) {
+                            onHideLoading()
+                            throwable.message?.let {
+                                childFragmentManager.showSendToast(
+                                    false,
+                                    getString(R.string.error),
+                                    it
+                                )
+                            }
+                        }
+                    }
+                )
             }
         }
-    }
 
-    private fun initData() {
-        viewModel.apply {
-            loginError.observe(viewLifecycleOwner) {
-                onHideLoading()
-                childFragmentManager.showSendToast(false, getString(R.string.error), it)
-            }
+        if (App.preferenceHelper.token.isNotBlank()) {
+            val list: MutableList<ReceiptMessage> = mutableListOf()
+            list.add(ReceiptMessage(token = App.preferenceHelper.token))
+            viewModel.loginResult.postValue(list)
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-
-        connection?.apply {
-            disconnect()
-            stop()
-        }
-        connection = null
-        proxy = null
+        cancel()
     }
 }

@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.*
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.provider.MediaStore
 import android.provider.Settings
 import android.text.Html
@@ -14,16 +15,72 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.commit
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.ttchain.githubusers.dialog.ToastDialog
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
+import org.threeten.bp.OffsetDateTime
+import org.threeten.bp.ZoneId
+import org.threeten.bp.format.DateTimeFormatter
+import org.threeten.bp.format.DateTimeParseException
 import java.math.BigDecimal
 import java.math.BigInteger
+import java.math.RoundingMode
 import java.security.MessageDigest
+import java.text.DecimalFormat
 import java.util.*
+
+private val DATE_TIME_LAST_MINS =
+    DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm").withZone(ZoneId.systemDefault())
+
+fun OffsetDateTime.format(): String {
+    return this.format(DATE_TIME_LAST_MINS)
+}
+
+fun String.date(): OffsetDateTime? = try {
+    OffsetDateTime.parse(this, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+} catch (e: DateTimeParseException) {
+    e.printStackTrace()
+    null
+}
+
+inline fun <reified T : Any> Activity.launch(intent: Intent.() -> Unit) {
+    startActivity(Intent().setClass(this, T::class.java).apply(intent))
+}
+
+private val decimalFormat_number_4 = DecimalFormat("#.####")
+
+fun String.p4Str(): String {
+    return BigDecimal(this).p4Str()
+}
+
+fun BigDecimal.p4Str(): String {
+    decimalFormat_number_4.roundingMode = RoundingMode.DOWN
+    return decimalFormat_number_4.format(this).replace("^-(?=0(\\.0*)?$)".toRegex(), "")
+}
+
+inline fun <reified T : Any> Fragment.getBundleValue(key: String, default: T) = lazy {
+    arguments?.get(key) as? T ?: default
+}
+
+inline fun <reified T : Fragment> T.withBundleValue(argsBuilder: Bundle.() -> Unit):
+        T = this.apply { arguments = Bundle().apply(argsBuilder) }
+
+inline fun <reified T : Any> FragmentActivity.getIntentValue(key: String, default: T) = lazy {
+    return@lazy if (intent == null || intent.extras == null) {
+        default
+    } else {
+        intent.extras!![key] as? T ?: default
+    }
+}
+
+inline fun <reified T> Gson.fromJson(json: String): T =
+    fromJson(json, object : TypeToken<T>() {}.type)
 
 @SuppressLint("HardwareIds")
 fun getUniqueDeviceId(context: Context): String {

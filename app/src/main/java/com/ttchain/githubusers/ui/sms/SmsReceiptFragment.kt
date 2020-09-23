@@ -9,53 +9,103 @@ import com.afollestad.materialdialogs.list.listItems
 import com.tbruyelle.rxpermissions2.RxPermissions
 import com.ttchain.githubusers.*
 import com.ttchain.githubusers.base.BaseFragment
+import com.ttchain.githubusers.data.ReceiptMessage
+import com.ttchain.githubusers.net.SignalR
 import com.ttchain.githubusers.tools.SMSContentObserver
-import com.ttchain.githubusers.tools.isBankAccountNo
+import io.reactivex.Observable
+import io.reactivex.disposables.Disposable
 import kotlinx.android.synthetic.main.sms_receipt.*
+import kotlinx.coroutines.*
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
+import timber.log.Timber
+import java.util.concurrent.TimeUnit
 
-class SmsReceiptFragment : BaseFragment(), SMSContentObserver.MessageListener {
+class SmsReceiptFragment : BaseFragment(), SMSContentObserver.MessageListener,
+    CoroutineScope by MainScope() {
 
-    companion object {
-        fun newInstance() = SmsReceiptFragment()
-    }
+    private val list by getBundleValue("login_success", mutableListOf<ReceiptMessage>())
+    private var banks = mutableListOf<String>()
 
     override val layoutId = R.layout.sms_receipt
 
     private val viewModel by sharedViewModel<SmsViewModel>()
     private var smsContentObserver: SMSContentObserver? = null
 
+    private var disp: Disposable? = null
+
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         initView()
-        initData()
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        smsContentObserver?.unRegister()
-        smsContentObserver = null
     }
 
     @SuppressLint("SetTextI18n")
     override fun initView() {
-        testButton.visibility = View.VISIBLE
-        testButton.setOnClickListener {
-            editTextBankAccountNo.setText("6228480708716183973")
+        testButton.visibility = View.GONE
+        testButton.setOnClickListener { getSwitchBank() }
+
+        logoutButton.setOnClickListener {
+            SignalR.invoke("logout")
+            App.preferenceHelper.token = ""
+            activity?.supportFragmentManager?.popBackStack()
         }
 
-        val items = listOf(
-            "中國銀行 123456789 陳大大",
-            "上海銀行 123456789 陳二大",
-            "北京銀行 123456789 陳三大",
-            "北京銀行 123456789 陳三大",
-            "北京銀行 123456789 陳三大"
-        )
+        bank_switch.isEnabled = false
+
+        SignalR.addMonitorCallback { msg, data ->
+            if (msg == "error" && data.code == 9006) {
+                App.preferenceHelper.token = ""
+                Timber.i("token expired")
+                launch(Dispatchers.Main) {
+                    activity?.supportFragmentManager?.popBackStack()
+                }
+            } else {
+                Timber.i("Monitor msg = $msg, data= $data")
+            }
+        }
+
+        list.find { it.isActive != null }?.isActive?.let {
+            bank_switch.isChecked = it
+        }
+
+        if (!SignalR.isConnected) {
+            SignalR.initConnection(App.preferenceHelper.userHost)
+        }
+
+        bank_switch.setOnCheckedChangeListener { _, isChecked ->
+            switchBank(isChecked)
+        }
+
+        val items = list.find { it.payeeBanks != null }?.payeeBanks?.map {
+            "${it.bankName} ${it.accountNo} ${it.accountName}"
+        }
+
+        if (items != null) {
+            banks = items.toMutableList()
+        }
 
         getBankButton.setOnClickListener {
             context?.let {
-                MaterialDialog(it).show {
-                    listItems(items = items)
+                if (banks.isNotEmpty()) {
+                    MaterialDialog(it).show { listItems(items = banks) }
+                } else {
+                    onShowLoading()
+                    SignalR.invoke(
+                        method = "payeeBanks",
+                        App.preferenceHelper.token,
+                        callback = { _, data ->
+                            onHideLoading()
+                            data.payeeBanks?.let { list ->
+                                banks = list.map { bank ->
+                                    "${bank.bankName} ${bank.accountNo} ${bank.accountName}"
+                                }.toMutableList()
+                            }
+                            launch(Dispatchers.Main) {
+                                MaterialDialog(it).show {
+                                    listItems(items = banks)
+                                }
+                            }
+                        },
+                        errorCallback = { onHideLoading() })
                 }
             }
         }
@@ -64,75 +114,90 @@ class SmsReceiptFragment : BaseFragment(), SMSContentObserver.MessageListener {
         startButton.setOnClickListener {
             requireActivity().hideKeyboard()
             RxPermissions(requireActivity())
-                .request(
-                    Manifest.permission.READ_SMS
-                )
+                .request(Manifest.permission.READ_SMS)
                 .toMain()
                 .subscribe { granted ->
                     if (granted) {
-                        val bankAccountNumber = editTextBankAccountNo.text.toString()
-                        viewModel.bankAccountNumber = bankAccountNumber
-                        if (bankAccountNumber.isBlank() || !isBankAccountNo(bankAccountNumber)) {
-                            childFragmentManager.showSendToast(
-                                false,
-                                getString(R.string.error),
-                                getString(R.string.empty_error)
-                            )
-                        } else {
-                            editTextBankAccountNo.isEnabled = false
-                            startButton.isEnabled = false
-                            cancelButton.isEnabled = true
-                            onShowLoading()
-                            viewModel.checkBankNumber()
-
-                            val originalText = textResult.text
-                            textResult.text = "開始\n\n$originalText"
-                        }
-                    } else {
-                        startSettingsActivity()
+                        startButton.isEnabled = false
+                        cancelButton.isEnabled = true
+                        val originalText = textResult.text
+                        textResult.text = "開始\n\n$originalText"
+                        registerSMSObserver()
                     }
                 }
         }
         cancelButton.setOnClickListener {
-//            editTextBankAccountNo.text.clear()
-            editTextBankAccountNo.isEnabled = true
             startButton.isEnabled = true
             cancelButton.isEnabled = false
 
             val originalText = textResult.text
             textResult.text = "取消\n\n$originalText"
         }
+
+        disp = Observable.create<String> { it.onNext("") }
+            .delay(1, TimeUnit.SECONDS)
+            .toMain()
+            .subscribe(
+                { getSwitchBank() },
+                { Timber.i(" ${it.message}") }
+            )
     }
 
-    private fun initData() {
-        viewModel.apply {
-            bankResult.observe(viewLifecycleOwner) {
-                onHideLoading()
-                if (it) registerSMSObserver()
-            }
-            bankError.observe(viewLifecycleOwner) {
-                onHideLoading()
-                childFragmentManager.showSendToast(false, getString(R.string.error), it)
-            }
-            receiptResult.observe(viewLifecycleOwner) {
-                collectText(it)
-            }
-            receiptError.observe(viewLifecycleOwner) {
-                collectText(it)
-            }
-        }
+    private fun getSwitchBank() {
+        SignalR.invoke(
+            method = "payeeBankStatus",
+            App.preferenceHelper.token,
+            callback = { _, data ->
+                data.isActive?.let {
+                    launch(Dispatchers.Main) {
+                        bank_switch.isChecked = it
+                        bank_switch.isEnabled = true
+                    }
+                }
+            },
+            errorCallback = { th ->
+                bank_switch.isEnabled = true
+                Timber.e("error= ${th.message}")
+            })
+    }
+
+    private fun switchBank(isChecked: Boolean) {
+        SignalR.invoke(
+            method = "switchBank",
+            App.preferenceHelper.token,
+            isChecked,
+            callback = { msg, data ->
+                if (msg == "systemMessage") {
+                    launch(Dispatchers.Main) {
+                        childFragmentManager.showSendToast(
+                            true,
+                            getString(R.string.correct),
+                            data.message ?: getString(R.string.correct)
+                        )
+                    }
+                }
+            },
+            errorCallback = { th ->
+                Timber.e("error= ${th.message}")
+            })
+    }
+
+    private fun sendSmsContent(message: String) {
+        SignalR.invoke(
+            method = "smsContent",
+            App.preferenceHelper.token,
+            message,
+            callback = { _, _ -> },
+            errorCallback = { th -> Timber.e("error= ${th.message}") })
     }
 
     @SuppressLint("SetTextI18n")
     override fun onReceived(message: String?) {
         val originalText = textResult.text
         textResult.text = message + "\n\n" + originalText
-        viewModel.receipt(message.orEmpty())
+        sendSmsContent(message.orEmpty())
     }
 
-    /**
-     * 註冊簡訊觀察器
-     */
     private fun registerSMSObserver() {
         childFragmentManager.showSendToast(
             true,
@@ -145,16 +210,16 @@ class SmsReceiptFragment : BaseFragment(), SMSContentObserver.MessageListener {
         }
     }
 
-    private fun collectText(text: String) {
-        viewModel.apply {
-            when {
-                receiptText.isBlank() -> {
-                    receiptText.plus(text)
-                }
-                else -> {
-                    receiptText.plus("\n$text")
-                }
-            }
-        }
+    override fun onDestroyView() {
+        super.onDestroyView()
+        smsContentObserver?.unRegister()
+        smsContentObserver = null
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        disp?.dispose()
+        disp = null
+        cancel()
     }
 }

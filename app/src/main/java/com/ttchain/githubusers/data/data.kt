@@ -2,6 +2,9 @@ package com.ttchain.githubusers.data
 
 import com.google.gson.annotations.SerializedName
 import com.ttchain.githubusers.net.ApiCodeEnum
+import org.threeten.bp.OffsetDateTime
+import java.io.Serializable
+import java.math.BigDecimal
 
 data class UserListData(
     @SerializedName("gists_url")
@@ -164,12 +167,29 @@ data class ReceiptMessage(
     var slaveAccountId: String? = null,
     var token: String? = null,
     var isActive: Boolean? = null,
-    var bankList: List<Bank>? = null
-)
+    var payeeBanks: List<Bank>? = null,
+    var message: String? = null,
+    var code: Int? = null,
+    var slaveAccountOrders: List<Order>? = null
+) : Serializable
 
 data class Bank(
-    var payeeBankId: Int? = null,
-    var bankName: String? = null,
-    var accountNo: String? = null,
-    var accountName: String? = null
-)
+    var payeeBankId: Int?,
+    var bankName: String?,
+    var accountNo: String?,
+    var accountName: String?
+) : Serializable
+
+data class Order(
+    var orderNo: String? = null,
+    var currency: String? = null,
+    var currencyAmount: BigDecimal? = null,
+    var cryptocurrency: String? = null,
+    var cryptocurrencyAmount: BigDecimal? = null,
+    var paymentOn: String? = null,
+    var payeeBankName: String? = null,
+    var payeeName: String? = null,
+    var payeeBankAccountNo: String? = null,
+    var payerName: String? = null,
+    var paymentVouchers: List<String>? = null
+) : Serializable

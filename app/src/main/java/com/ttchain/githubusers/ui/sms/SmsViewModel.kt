@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.lifecycle.MutableLiveData
 import com.ttchain.githubusers.R
 import com.ttchain.githubusers.base.BaseViewModel
-import com.ttchain.githubusers.data.LoginResponse
+import com.ttchain.githubusers.data.ReceiptMessage
 import com.ttchain.githubusers.getSHA512
 import com.ttchain.githubusers.getUniqueDeviceId
 import com.ttchain.githubusers.repository.SmsRepository
@@ -12,7 +12,7 @@ import com.ttchain.githubusers.tools.TimeUtils
 
 class SmsViewModel(private val context: Context, private val smsRepository: SmsRepository) :
     BaseViewModel() {
-    var loginResult = MutableLiveData<LoginResponse>()
+    var loginResult = MutableLiveData<List<ReceiptMessage>>()
     var loginError = MutableLiveData<String>()
     var loginId = ""
     var secretKey = ""
@@ -25,7 +25,7 @@ class SmsViewModel(private val context: Context, private val smsRepository: SmsR
                 .subscribe({
                     secretKey = it.data?.secretKey.orEmpty()
 //                    App.apiAddress = it.data?.callbackDomain.orEmpty()
-                    loginResult.value = it.data
+                    loginResult.value = arrayListOf()
                 }, {
                     loginError.value = it.message
                 })

@@ -12,6 +12,7 @@ class AppPreferenceHelper(private val preference: SharedPreferences) {
         private const val keyAccount = "account"
         private const val keyPassword = "password"
         private const val keyAndroidId = "androidId"
+        private const val keyToken = "token"
     }
 
     private var gson: Gson = GsonBuilder().create()
@@ -67,6 +68,10 @@ class AppPreferenceHelper(private val preference: SharedPreferences) {
         set(value) = preference.edit { putString(keyPassword, Gzip.compress(value)) }
         get() = Gzip.decompress(preference.getString(keyPassword, "") ?: "")
 
+
+    var token: String
+        set(value) = preference.edit { putString(keyToken, Gzip.compress(value)) }
+        get() = Gzip.decompress(preference.getString(keyToken, "") ?: "")
 //    /**
 //     * 取得Android Id
 //     */

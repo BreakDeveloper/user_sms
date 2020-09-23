@@ -5,15 +5,22 @@ import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentPagerAdapter
 import com.ttchain.githubusers.App.Companion.instance
 import com.ttchain.githubusers.R
+import com.ttchain.githubusers.data.ReceiptMessage
 import com.ttchain.githubusers.ui.bank.BankFragment
+import com.ttchain.githubusers.withBundleValue
+import java.io.Serializable
 
-class SmsPagerAdapter(fm: FragmentManager) :
+class SmsPagerAdapter(fm: FragmentManager, private val list: List<ReceiptMessage>) :
     FragmentPagerAdapter(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT) {
 
     override fun getItem(index: Int): Fragment {
         return when (index) {
-            0 -> SmsReceiptFragment()
-            1 -> BankFragment()
+            0 -> SmsReceiptFragment().withBundleValue {
+                putSerializable("login_success", list as Serializable)
+            }
+            1 -> BankFragment().withBundleValue {
+                putSerializable("login_success", list as Serializable)
+            }
             else -> Fragment()
         }
     }

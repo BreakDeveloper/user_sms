@@ -5,9 +5,12 @@ import com.ttchain.githubusers.R
 import com.ttchain.githubusers.addFragment
 import com.ttchain.githubusers.base.BaseActivity
 import com.ttchain.githubusers.changeFragment
+import com.ttchain.githubusers.net.SignalR
 import com.ttchain.githubusers.tools.Gzip
+import com.ttchain.githubusers.withBundleValue
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import timber.log.Timber
+import java.io.Serializable
 
 class SmsActivity : BaseActivity() {
 
@@ -33,10 +36,20 @@ class SmsActivity : BaseActivity() {
     }
 
     private fun initData() {
-        viewModel.loginResult.observe(this) {
+        viewModel.loginResult.observe(this) { list ->
             onHideLoading()
 //            addFragment(R.id.container, SmsReceiptFragment.newInstance())
-            addFragment(R.id.container, SmsContainerFragment())
+            addFragment(R.id.container, SmsContainerFragment().withBundleValue {
+                putSerializable("login_success", list as Serializable)
+            })
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        SignalR.run {
+            clearMonitorCallback()
+            disconnection()
         }
     }
 }
